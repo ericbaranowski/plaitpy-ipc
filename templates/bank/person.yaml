@@ -1,0 +1,50 @@
+mixin:
+  - bank/env.yaml
+
+define:
+  tell_rate: 60
+  accounts: 10000
+  amount: 100000
+
+fields:
+  _account_id:
+    initial:
+      random: randint(0, ${accounts})
+    lambda: prev._account_id
+
+  _transaction:
+    initial:
+      random: randint(0, ${amount}) - (${amount} / 2)
+    lambda: prev._transaction
+
+  account_id:
+    lambda: this._account_id
+    onlyif: this.in_transaction
+  transaction:
+    lambda: this._transaction
+    onlyif: this.in_transaction
+
+  spawned:
+    initial:
+      lambda: ecosystem.turn
+    lambda: prev.spawned
+
+  delay:
+    initial: 0
+    lambda: prev.delay + 1
+
+  in_transaction:
+    lambda: ecosystem.grab("teller")
+
+  expired:
+    lambda: ecosystem.expire(this)
+    onlyif: this.in_transaction
+
+  tick:
+    lambda: ecosystem.turn
+
+  id:
+    lambda: ecosystem.get_pid(this)
+
+imports:
+  - plaitpy_ipc: IPC

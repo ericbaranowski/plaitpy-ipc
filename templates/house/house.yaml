@@ -1,0 +1,21 @@
+# this template defines a house that contains occupants
+mixin:
+  - house/env.yaml
+
+define:
+  occupants: 20
+
+fields:
+  _persons:
+    initial:
+      lambda: |
+        [ ecosystem.spawn("house/occupant.yaml") for x in range($occupants) ]
+
+    lambda: 0
+
+printer: |
+  for record, proc in ecosystem.gen_records():
+      print(json.dumps(record))
+
+imports:
+  - json

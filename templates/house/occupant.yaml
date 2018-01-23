@@ -1,0 +1,95 @@
+mixin:
+  - house/env.yaml
+
+imports:
+  - plaitpy_ipc
+define:
+  eat_rate: 10 # we eat this many chomps in a tick
+  relieving: 50 # we relieve this many chomps in a tick
+  bladder_rate: 100
+  starving: 200 # when we "starve" and die
+  infected: 100
+  refill_time: 10
+  refill_amount: 10
+
+fields:
+
+  _bladder_feeder:
+    finalize: max(value, 0)
+    initial:
+      lambda: 100
+    switch:
+      - onlyif: this.eating
+        lambda: prev._bladder_feeder + ${bladder_rate} - 4
+      - onlyif: prev._bladder_feeder >= 0
+        lambda: prev._bladder_feeder - 2
+      - default:
+        lambda: prev._bladder_feeder - 1
+
+  bladder:
+    initial:
+      lambda: 0
+    switch:
+      - onlyif: this.relieving
+        lambda: prev.bladder - ${relieving}
+      - onlyif: this._bladder_feeder > 10
+        lambda: prev.bladder + 1
+      - default:
+        lambda: prev.bladder
+
+  hunger:
+    initial: 0
+    switch:
+      - onlyif: this.eating
+        lambda: prev.hunger - ${eat_rate}
+      - default:
+        lambda: prev.hunger + 1
+
+    finalize: max(0, value)
+
+  eating:
+    onlyif: prev.hunger > 50 and not this.refill_paper
+    lambda: ECO.kitchen.grab()
+
+
+  paper:
+    lambda: ECO.paper
+
+  _use_paper:
+    effect: ECO.paper -= 1
+    onlyif: this.relieving
+
+
+  refill_paper:
+    onlyif: ECO.paper == 0
+    lambda: ECO.paper_refill.grab()
+
+  refilling:
+    onlyif: this.refill_paper
+    switch:
+      - onlyif: prev.refilling == ${refill_time}
+        effect: ECO.paper += ${refill_amount}
+      - onlyif: prev.refilling < ${refill_time}
+        lambda: (prev.refilling or 0) + 1
+      - default:
+        lambda: 0
+
+  relieving:
+    onlyif: prev.bladder > 50 and ECO.paper > 0
+    lambda: ECO.bathroom.grab()
+
+  starving:
+    onlyif: this.hunger > ${starving}
+    lambda: ecosystem.expire()
+
+  infected:
+    onlyif: this.bladder > ${infected}
+    lambda: ecosystem.expire()
+
+  id:
+    lambda: ecosystem.get_pid()
+
+  tick:
+    lambda: ecosystem.get_tick()
+
+

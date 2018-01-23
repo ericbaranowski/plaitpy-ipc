@@ -1,0 +1,18 @@
+mixin:
+  - basic/env.yaml
+
+fields:
+  tick:
+    lambda: ecosystem.get_tick()
+
+  id:
+    lambda: ecosystem.get_pid()
+
+  age:
+    initial:
+      lambda: 0
+    lambda: prev.age + 1
+
+  should_die:
+    lambda: ecosystem.expire()
+    onlyif: random.random() > 0.9

@@ -1,0 +1,36 @@
+# we simulate a bank as an environment
+# what features do environments get?
+#
+# from queueing theory, we will emulate M/M/c queues
+mixin:
+  - bank/env.yaml
+
+fields:
+  tick:
+    initial: 0
+    lambda: prev.tick + 1
+
+  _spawn_count:
+    onlyif: this.should_spawn
+    random: randint(1, 10)
+
+  entrance:
+    onlyif: this.should_spawn
+    lambda: |
+      [ ecosystem.spawn("bank/person.yaml") for _ in range(this._spawn_count) ]
+
+  should_spawn:
+    random: random() > 0.9
+
+printer: |
+  for record, proc in ecosystem.gen_records():
+      print(json.dumps(record))
+
+
+hide:
+  - ecosystem
+  - entrance
+
+imports:
+  - json
+  - plaitpy_ipc: IPC

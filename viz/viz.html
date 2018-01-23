@@ -1,0 +1,138 @@
+<html>
+  <head>
+    <script
+    <script src="static/jquery-3.2.1.min.js"> </script>
+    <script src="static/d3.v4.min.js"> </script>
+    <script src="static/underscore-min.js"> </script>
+    <script src="output.js"> </script>
+  </head>
+
+  <body>
+
+    tick: <span class="tick"> </span>
+    alive: <span class="queue"> </span>
+
+    <div>
+      <table id="table"> </table>
+    </div>
+    <script>
+      $(function() {
+        console.log("OUTPUT", DATA);
+      });
+
+      var color = d3.scaleOrdinal(d3.schemeCategory20c);
+
+      var table = d3.select('#table');
+      var thead = table.append('thead')
+      var	tbody = table.append('tbody');
+
+      var queueEl = d3.select(".queue");
+      var tickEl = d3.select(".tick");
+
+
+      function buildTableHeaders(columns) {
+        // append the header row
+        thead.append('tr')
+          .selectAll('th')
+          .data(columns).enter()
+          .append('th')
+            .text(function (column) { return column; });
+
+
+      }
+
+      function tabulate(data, columns) {
+        if (!data.length) {
+          return;
+        }
+
+        // create a row for each object in the data
+        data = _.sortBy(data, function(d) { return d.id });
+
+        var rows = tbody.selectAll('tr')
+          .data(data, function(d) {
+            return d.id
+          });
+
+        new_rows = rows
+          .enter()
+          .insert('tr', ":first-child");
+
+        // create a cell in each row for each column
+        var cells = new_rows.selectAll('td')
+          .data(function (row) {
+            var ret = columns.map(function (column) {
+              return {column: column, value: row[column]};
+            });
+            return ret;
+          });
+
+        cells
+          .enter()
+          .append('td')
+          .text(function (d) { return d.value; });
+
+        cells
+          .text(function (d) { return d.value; });
+
+
+        cells = rows.selectAll('td')
+          .data(function (row) {
+            var ret = columns.map(function (column) {
+              return {column: column, value: row[column]};
+            });
+            return ret;
+          });
+
+        cells
+          .text(function (d) { return d.value; });
+
+        return table;
+      }
+
+      var columns = {};
+      var last_tick = 0;
+      _.each(DATA, function(d, k) {
+        last_tick = Math.max(d.tick, last_tick);
+        _.each(d, function(v, k) {
+          columns[k] = 1;
+        });
+      });
+      columns = _.keys(columns);
+      console.log("COLUMNS", columns);
+
+			function showTick(tick) {
+
+				var data = _.filter(DATA, function(d) {
+					return d.tick == tick;
+				});
+
+        tickEl.text(tick);
+        queueEl.text(data.length);
+
+        tabulate(data, columns);
+
+			}
+
+
+      var tick = 1;
+      function playNextTick() {
+        showTick(tick);
+        tick += 1;
+
+        if (tick <= last_tick) {
+          setTimeout(playNextTick, 33);
+        }
+      }
+
+      $(function() {
+        buildTableHeaders(columns);
+        playNextTick();
+      });
+
+
+
+    </script>
+
+  </body>
+</html>

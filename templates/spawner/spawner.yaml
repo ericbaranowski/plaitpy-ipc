@@ -1,0 +1,40 @@
+# notice that the outermost spawner.yaml process can not be expired since
+# plait.py is running that process. however, since we are not printing the
+# parent process' records, we won't notice it.
+
+setup: |
+  import plaitpy_ipc
+  import json
+  import sys
+
+  if not GLOBALS.ecosystem:
+    GLOBALS.ecosystem = plaitpy_ipc.Ecosystem()
+    GLOBALS.ECO = ecosystem.shared()
+
+    ecosystem.add_lock("spawner", capacity=1)
+
+
+fields:
+  tick:
+   lambda: ecosystem.get_tick()
+
+  make_child:
+    onlyif: random.random() > 0.9 and ECO.spawner.grab()
+    lambda: ecosystem.spawn("spawner.yaml")
+
+  age:
+    initial:
+      lambda: 0
+    lambda: prev.age + 1
+
+  expired:
+    onlyif: random.random() > 0.9 and not this.age == 0
+    lambda: ecosystem.expire()
+
+  id:
+    lambda: ecosystem.get_pid()
+
+
+print: |
+  for r, p in ecosystem.gen_records():
+    print(json.dumps(r))
